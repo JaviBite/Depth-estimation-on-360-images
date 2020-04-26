@@ -3,6 +3,8 @@ import sys
 import os
 import io
 import utils
+import cv2
+import numpy
 from torch.utils.data import Dataset
 
 class ThreeD60(Dataset):
@@ -39,13 +41,18 @@ class ThreeD60(Dataset):
         depth_name = os.path.join(self.root_dir,
                                 self.data[idx]['depth'])
         img = utils.getColorImage(img_name)
-        w, h = img.shape  
+        cw, ch = img.shape
+
+        img = numpy.array(cv2.imread(os.path.join(self.root_dir,
+                                self.data[idx]['image']), cv2.IMREAD_ANYCOLOR))
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB).transpose(2, 0, 1)
+        c, h, w = img.shape   
 
         dep = utils.getDepthImage(depth_name)
-        w, h = dep.shape 
+        dw, dh = dep.shape 
 
-        image = torch.from_numpy(img).type('torch.FloatTensor').reshape(1, h, w) / 255.0
-        depth = torch.from_numpy(dep).type('torch.FloatTensor').reshape(1, h, w)
+        image = torch.from_numpy(img).type('torch.DoubleTensor').reshape(3, h, w) / 255.0
+        depth = torch.from_numpy(dep).type('torch.LongTensor').reshape(1, dh, dw)
         sample = {'image': image, 'depth': depth}
 
         if self.transform:
