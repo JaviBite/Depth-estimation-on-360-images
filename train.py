@@ -13,7 +13,6 @@ import utils
 import time
 
 num_epochs = 5
-num_classes = 10
 bs = 4
 lr = 0.001
 
@@ -60,10 +59,10 @@ def main():
     '''
 
 
-    model = net.I2D().to(DEVICE).double()
+    model = net.ConvNet().to(DEVICE).double()
 
     # Loss and optimizer
-    criterion = nn.CrossEntropyLoss()
+    criterion = net.GradLoss()
     # optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=4e-5)
 
@@ -82,8 +81,11 @@ def main():
         for i, sample in enumerate(train_loader):
             
             # Run the forward pass
-            print(sample['image'].shape)
+            # print(sample['image'].shape)
+            # print(sample['depth'].shape)
             outputs = model(sample['image'])
+            # print(outputs.shape)
+            # print(sample['depth'].shape)
             loss = criterion(outputs, sample['depth'])
             loss_list.append(loss.item())
 
@@ -93,16 +95,18 @@ def main():
             optimizer.step()
 
             # Track the accuracy
-            total = sample['depth'].size(0)
-            _, predicted = torch.max(outputs.data, 1)
-            correct = (utils.accurate(predicted,sample['depth'])).sum().item()
-            acc_list.append(correct / total)
+            # total = sample['depth'].size(0)
+            # _, predicted = torch.max(outputs.data, 1)
+            # correct = (utils.accurate(predicted,sample['depth'])).sum().item()
+            # acc_list.append(correct / total)
 
             # Verbose
             if (i + 1) % 10 == 0:
-                print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'
-                    .format(epoch + 1, num_epochs, i + 1, total_step, loss.item(),
-                            (correct / total) * 100))
+                # print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'
+                #     .format(epoch + 1, num_epochs, i + 1, total_step, loss.item(),
+                #             (correct / total) * 100))
+                print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
+                    .format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
 
         torch.save(model.state_dict(),'{}/fyn_model_ep' + str(epoch) + '.pt'.format(LOAD_DIR))
         end = time.time()

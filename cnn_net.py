@@ -1,29 +1,85 @@
 import torch.nn as nn
 from torchvision.models.resnet import resnet101
 import torch.nn.functional as F
+import torch
+
+class GradLoss(nn.Module):
+    def __init__(self):
+        super(GradLoss, self).__init__()
+    # L1 norm
+    def forward(self, grad_fake, grad_real):
+        return torch.mean( torch.abs(grad_real-grad_fake) )
 
 class ConvNet(nn.Module):
     def __init__(self):
         super(ConvNet, self).__init__()
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(1, 1, kernel_size=5, stride=1, padding=2),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2))
+
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(1, 1, kernel_size=5, stride=1, padding=2),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2))
+
         self.layer1 = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2))
+            nn.Conv2d(1, 4, kernel_size=5, stride=1, padding=2),
+            nn.ReLU())
         self.layer2 = nn.Sequential(
-            nn.Conv2d(32, 64, kernel_size=5, stride=1, padding=2),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2))
+            nn.Conv2d(4, 8, kernel_size=5, stride=1, padding=2),
+            nn.ReLU())
+
+        self.layer3 = nn.Sequential(
+            nn.Conv2d(8, 4, kernel_size=5, stride=1, padding=2),
+            nn.ReLU())
+        self.layer4 = nn.Sequential(
+            nn.Conv2d(4, 1, kernel_size=5, stride=1, padding=2),
+            nn.ReLU())
+
         self.drop_out = nn.Dropout()
-        self.fc1 = nn.Linear(7 * 7 * 64, 1000)
-        self.fc2 = nn.Linear(1000, 10)
+
+        self.upsampling = F.interpolate
 
     def forward(self, x):
-        out = self.layer1(x)
+        out = self.conv1(x)
+        # print(out.shape)
+        # a = input("hola")
+
+        out = self.conv2(out)
+        # print(out.shape)
+        # a = input("hola")
+
+        out = self.layer1(out)
+        # print(out.shape)
+        # a = input("hola")
+
         out = self.layer2(out)
-        out = out.reshape(out.size(0), -1)
+        # print(out.shape)
+        # a = input("hola")
+
         out = self.drop_out(out)
-        # out = self.fc1(out)
-        # out = self.fc2(out)
+        # print(out.shape)
+        # a = input("Upsampling:")
+
+        _, _, h, w = out.shape
+        out = self.upsampling(out, size=(h*2,w*2) )
+        # print(out.shape)
+        # a = input("hola")
+
+        _, _, h, w = out.shape
+        out = self.upsampling(out, size=(h*2,w*2))
+        # print(out.shape)
+        # a = input("hola")
+
+        out = self.layer3(out)
+        # print(out.shape)
+        # a = input("hola")
+
+        out = self.layer4(out)
+        # print(out.shape)
+        # a = input("hola")
+
         return out
 
 

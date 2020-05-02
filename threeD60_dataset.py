@@ -45,14 +45,14 @@ class ThreeD60(Dataset):
 
         img = numpy.array(cv2.imread(os.path.join(self.root_dir,
                                 self.data[idx]['image']), cv2.IMREAD_ANYCOLOR))
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB).transpose(2, 0, 1)
-        c, h, w = img.shape   
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)#.transpose(2, 0, 1)
+        h, w = img.shape   
 
         dep = utils.getDepthImage(depth_name)
-        dw, dh = dep.shape 
+        dh, dw = dep.shape 
 
-        image = torch.from_numpy(img).type('torch.DoubleTensor').reshape(3, h, w) / 255.0
-        depth = torch.from_numpy(dep).type('torch.LongTensor').reshape(1, dh, dw)
+        image = torch.from_numpy(img).type('torch.DoubleTensor').reshape(1, h, w) / 255.0
+        depth = torch.from_numpy(dep).type('torch.DoubleTensor').reshape(1, dh, dw)
         sample = {'image': image, 'depth': depth}
 
         if self.transform:
