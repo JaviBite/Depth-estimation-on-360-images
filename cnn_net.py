@@ -14,27 +14,27 @@ class ConvNet(nn.Module):
     def __init__(self):
         super(ConvNet, self).__init__()
         self.conv1 = nn.Sequential(
-            nn.Conv2d(1, 1, kernel_size=5, stride=1, padding=2),
+            nn.Conv2d(3, 6, kernel_size=5, stride=1, padding=2),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2))
 
         self.conv2 = nn.Sequential(
-            nn.Conv2d(1, 1, kernel_size=5, stride=1, padding=2),
+            nn.Conv2d(6, 12, kernel_size=5, stride=1, padding=2),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2))
 
         self.layer1 = nn.Sequential(
-            nn.Conv2d(1, 4, kernel_size=5, stride=1, padding=2),
+            nn.Conv2d(3, 6, kernel_size=5, stride=1, padding=2),
             nn.ReLU())
         self.layer2 = nn.Sequential(
-            nn.Conv2d(4, 8, kernel_size=5, stride=1, padding=2),
+            nn.Conv2d(6, 12, kernel_size=5, stride=1, padding=2),
             nn.ReLU())
 
         self.layer3 = nn.Sequential(
-            nn.Conv2d(8, 4, kernel_size=5, stride=1, padding=2),
+            nn.Conv2d(12, 6, kernel_size=5, stride=1, padding=2),
             nn.ReLU())
         self.layer4 = nn.Sequential(
-            nn.Conv2d(4, 1, kernel_size=5, stride=1, padding=2),
+            nn.Conv2d(6, 1, kernel_size=5, stride=1, padding=2),
             nn.ReLU())
 
         self.drop_out = nn.Dropout()
@@ -46,35 +46,35 @@ class ConvNet(nn.Module):
         # print(out.shape)
         # a = input("hola")
 
-        out = self.conv2(out)
-        # print(out.shape)
-        # a = input("hola")
+        # out = self.conv2(out)
+        # # print(out.shape)
+        # # a = input("hola")
 
-        out = self.layer1(out)
-        # print(out.shape)
-        # a = input("hola")
+        # out = self.layer1(out)
+        # # print(out.shape)
+        # # a = input("hola")
 
-        out = self.layer2(out)
-        # print(out.shape)
-        # a = input("hola")
+        # out = self.layer2(out)
+        # # print(out.shape)
+        # # a = input("hola")
 
-        out = self.drop_out(out)
-        # print(out.shape)
-        # a = input("Upsampling:")
+        # out = self.drop_out(out)
+        # # print(out.shape)
+        # # a = input("Upsampling:")
 
-        _, _, h, w = out.shape
-        out = self.upsampling(out, size=(h*2,w*2) )
-        # print(out.shape)
-        # a = input("hola")
+        # _, _, h, w = out.shape
+        # out = self.upsampling(out, size=(h*5,w*5) )
+        # # print(out.shape)
+        # # a = input("hola")
 
         _, _, h, w = out.shape
         out = self.upsampling(out, size=(h*2,w*2))
         # print(out.shape)
         # a = input("hola")
 
-        out = self.layer3(out)
-        # print(out.shape)
-        # a = input("hola")
+        # out = self.layer3(out)
+        # # print(out.shape)
+        # # a = input("hola")
 
         out = self.layer4(out)
         # print(out.shape)

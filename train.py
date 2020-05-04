@@ -84,6 +84,7 @@ def main():
             # print(sample['image'].shape)
             # print(sample['depth'].shape)
             outputs = model(sample['image'])
+            # print("outs")
             # print(outputs.shape)
             # print(sample['depth'].shape)
             loss = criterion(outputs, sample['depth'])
@@ -101,7 +102,7 @@ def main():
             # acc_list.append(correct / total)
 
             # Verbose
-            if (i + 1) % 10 == 0:
+            if (i + 1) % 100 == 0:
                 # print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'
                 #     .format(epoch + 1, num_epochs, i + 1, total_step, loss.item(),
                 #             (correct / total) * 100))
