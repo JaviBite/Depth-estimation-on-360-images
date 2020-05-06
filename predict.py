@@ -31,17 +31,9 @@ def main():
             outputs:torch.Tensor = net(data['image'])
             for i, out in enumerate(outputs):
 
-                print("Color shape: ", data['image'][i,:,:,:].shape)
-                print("ground shape: ", data['depth'][i,:,:,:].shape)
-                print("predict shape: ", outputs[i,:,:,:].shape)
-
                 color = utils.tensorToImage(data['image'][i,:,:,:])
                 ground = utils.getDepthImage(utils.tensorToDepth(data['depth'][i,:,:,:]))
                 predicted = utils.getDepthImage(utils.tensorToDepth(outputs[i,:,:,:]))
-
-                print("Color shape: ", color.shape)
-                print("ground shape: ", ground.shape)
-                print("predict shape: ", predicted.shape)
             
                 cv2.imshow("Color, Ground Truth, prediction", numpy.concatenate([color,ground,predicted]))
 
