@@ -7,6 +7,15 @@ import cv2
 import numpy
 from torch.utils.data import Dataset
 
+def loadImage(file):
+    image = numpy.array(cv2.imread(file))
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    return image
+
+def loadDepth(file):
+    depthImg = numpy.array(cv2.imread(file, cv2.IMREAD_ANYDEPTH))
+    return depthImg
+
 class ThreeD60(Dataset):
     """Face Landmarks dataset."""
 
@@ -40,15 +49,12 @@ class ThreeD60(Dataset):
         depth_name = os.path.join(self.root_dir,
                                 self.data[idx]['depth'])
 
-        img = utils.getColorImage(img_name)
-        dep = utils.getDepthImage(depth_name)
+        img = loadImage(img_name)
+        dep = loadDepth(depth_name)
 
-        h, w, c = img.shape   
-        image = torch.from_numpy(img).type('torch.DoubleTensor').reshape(c, h, w) / 255.0
+        imgTensor = utils.imageToTensor(img)
+        depthTensor = utils.depthToTensor(dep)
 
-        h, w = dep.shape
-        depth = torch.from_numpy(dep).type('torch.DoubleTensor').reshape(1, h, w)
-
-        sample = {'image': image, 'depth': depth}
+        sample = {'image': imgTensor, 'depth': depthTensor}
 
         return sample

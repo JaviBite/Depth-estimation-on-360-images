@@ -14,7 +14,7 @@ import time
 
 num_epochs = 5
 bs = 4
-lr = 0.001
+lr = 0.00001
 
 DATA_PATH = '3d60'
 TRAIN_FILE = '3d60/v1/train_files.txt'
@@ -84,6 +84,8 @@ def main():
             # print(sample['image'].shape)
             # print(sample['depth'].shape)
             outputs = model(sample['image'])
+            utils.show_depths_grid(sample['depth'])
+            input("hola")
             # print("outs")
             # print(outputs.shape)
             # print(sample['depth'].shape)
@@ -109,7 +111,7 @@ def main():
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
                     .format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
 
-        torch.save(model.state_dict(),'{}/fyn_model_ep' + str(epoch) + '.pt'.format(LOAD_DIR))
+        torch.save(model.state_dict(), LOAD_DIR + '/fyn_model_ep' + str(epoch) + '.pt')
         end = time.time()
         print('model saved')
         print('time elapsed: %fs' % (end - start))
