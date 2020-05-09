@@ -21,7 +21,7 @@ TRAIN_FILE = '3d60/v1/train_files.txt'
 TEST_FILE = '3d60/v1/test_files.txt'
 LOAD_DIR = 'models'
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class GradLoss(nn.Module):
     def __init__(self):
@@ -59,7 +59,7 @@ def main():
     '''
 
 
-    model = net.ConvNet().to(DEVICE).double()
+    model = net.ConvNet().to(DEVICE).float()
 
     # Loss and optimizer
     criterion = net.GradLoss()
@@ -84,8 +84,7 @@ def main():
             # print(sample['image'].shape)
             # print(sample['depth'].shape)
             outputs = model(sample['image'])
-            utils.show_depths_grid(sample['depth'])
-            input("hola")
+            
             # print("outs")
             # print(outputs.shape)
             # print(sample['depth'].shape)
