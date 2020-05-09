@@ -1,6 +1,6 @@
 import utils
 import cv2
-import cnn_net as m
+import nets as m
 import torch
 import numpy
 import threeD60_dataset as dataset

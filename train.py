@@ -4,13 +4,14 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 
-import cnn_net as net
+import nets as net
 import torch.nn as nn
 #import eval_cnn as eval
 import threeD60_dataset as dataset
 import cv2
 import utils
 import time
+import loss as lss
 
 num_epochs = 5
 bs = 4
@@ -22,13 +23,6 @@ TEST_FILE = '3d60/v1/test_files.txt'
 LOAD_DIR = 'models'
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-class GradLoss(nn.Module):
-    def __init__(self):
-        super(GradLoss, self).__init__()
-    # L1 norm
-    def forward(self, grad_fake, grad_real):
-        return torch.mean( torch.abs(grad_real-grad_fake) )
 
 def main():
     # transforms to apply to the data
@@ -62,7 +56,7 @@ def main():
     model = net.ConvNet().to(DEVICE).float()
 
     # Loss and optimizer
-    criterion = net.GradLoss()
+    criterion = lss.GradLoss()
     # optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=4e-5)
 
