@@ -1,4 +1,7 @@
-# Hyperparameters
+import signal
+import sys
+from functools import partial
+
 import torchvision
 import torch
 from torch.utils.data import DataLoader
@@ -13,16 +16,26 @@ import utils
 import time
 import loss as lss
 
-num_epochs = 5
+num_epochs = 20
 bs = 4
-lr = 0.00001
+lr = 0.0001
 
 DATA_PATH = '3d60'
 TRAIN_FILE = '3d60/v1/train_files.txt'
 TEST_FILE = '3d60/v1/test_files.txt'
 LOAD_DIR = 'models'
+SAVE_FILE = 'model2'
+
+wrapper = utils.CaptureOnSetAttribute()
+wrapper.END = False
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+def terminate_handler(signum, frame):
+    print('The model will be saved in next item')
+    wrapper.END = True
+
+signal.signal(signal.SIGINT, terminate_handler)
 
 def main():
     # transforms to apply to the data
@@ -53,7 +66,12 @@ def main():
     '''
 
 
-    model = net.ConvNet().to(DEVICE).float()
+    model = net.NetTwo().to(DEVICE).float()
+
+    if len(sys.argv) > 1:
+        model_file = sys.argv[1]
+        model.load_state_dict(torch.load(model_file))
+        print("Model " + model_file + "loaded")
 
     # Loss and optimizer
     criterion = lss.GradLoss()
@@ -104,10 +122,18 @@ def main():
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
                     .format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
 
-        torch.save(model.state_dict(), LOAD_DIR + '/fyn_model_ep' + str(epoch) + '.pt')
-        end = time.time()
+            if wrapper.END:
+                break
+
+        print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
+                    .format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
+        torch.save(model.state_dict(), LOAD_DIR + '/' + SAVE_FILE +'_ep' + str(epoch) + '.pt')
         print('model saved')
+        end = time.time()
         print('time elapsed: %fs' % (end - start))
+
+        if wrapper.END:
+                break
 
 if __name__ == '__main__':
     main()

@@ -3,8 +3,6 @@ import torchvision
 import torch
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
-
-import cnn_net as net
 import torch.nn as nn
 #import eval_cnn as eval
 import threeD60_dataset as dataset

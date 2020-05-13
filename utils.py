@@ -5,6 +5,12 @@ import torch
 import sys
 import torchvision
 
+class CaptureOnSetAttribute:
+    def __setattr__(self, attr, value):
+        # our hook to do something
+        #print(f'set value of {attr} to {value}')
+        # actually set the attribute the normal way after
+        super().__setattr__(attr, value)
 
 def imageToTensor(image):
     image = image.transpose(2, 0, 1)
