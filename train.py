@@ -71,12 +71,12 @@ def main():
     if len(sys.argv) > 1:
         model_file = sys.argv[1]
         model.load_state_dict(torch.load(model_file))
-        print("Model " + model_file + "loaded")
+        print("Model " + model_file + " loaded")
 
     # Loss and optimizer
     criterion = lss.GradLoss()
     # optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=4e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr) #, betas=(0.9, 0.999), eps=1e-08, weight_decay=4e-5)
 
     # Train the model
     total_step = len(train_loader)

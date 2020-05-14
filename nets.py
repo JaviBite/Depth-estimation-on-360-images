@@ -56,12 +56,14 @@ class NetTwo(nn.Module):
             nn.ReLU())
 
         self.convds2 = nn.Sequential(
-            nn.Conv2d(16, 32, kernel_size=5, stride=2, padding=2),
-            nn.ReLU())
+            nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=2),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2))
 
         self.convds3 = nn.Sequential(
-            nn.Conv2d(32, 64, kernel_size=5, stride=2, padding=2),
-            nn.ReLU())
+            nn.Conv2d(32, 64, kernel_size=5, stride=1, padding=2),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2))
 
         self.ups1 = nn.Sequential(
             nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=1),
@@ -74,6 +76,8 @@ class NetTwo(nn.Module):
         self.prediction = nn.Sequential(
             nn.Conv2d(16, 1, kernel_size=5, stride=1, padding=2),
             nn.ReLU())
+
+        self.drop_out = nn.Dropout()
         
 
     def forward(self, x):
@@ -82,7 +86,9 @@ class NetTwo(nn.Module):
 
         out = self.convds2(out)
 
-        out = self.convds3(out)
+        out = self.convds3(out)        
+
+        out = self.drop_out(out)
 
         out = self.ups1(out)
         _, _, h, w = out.shape
