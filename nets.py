@@ -88,7 +88,7 @@ class NetTwo(nn.Module):
 
         out = self.convds3(out)        
 
-        out = self.drop_out(out)
+        # out = self.drop_out(out)
 
         out = self.ups1(out)
         _, _, h, w = out.shape

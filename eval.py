@@ -14,6 +14,8 @@ SAVE_PATH = './models/fyn_model_ep4.pt'
 bs = 4
 PRINT_FREC = 10
 
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 def eval(model, test_loader, total):
 
     costFunc = c.Cost()
@@ -23,9 +25,9 @@ def eval(model, test_loader, total):
     with torch.no_grad():
         cost = 0.0
         for data in test_loader:
-            outputs:torch.Tensor = model(data['image'])
+            outputs:torch.Tensor = model(data['image'].to(DEVICE))
             for i, out in enumerate(outputs):
-                cost += costFunc(out, data['depth'][i])
+                cost += costFunc(out, data['depth'][i].to(DEVICE))
                 count += 1
 
             printIndex = printIndex + 1
@@ -50,8 +52,8 @@ def main():
     total = len(test_dataset)
 
     # Load model
-    model = m.ConvNet().float()
-    model.load_state_dict(torch.load(SAVE_PATH))
+    model = m.ConvNet().float().to(DEVICE)
+    model.load_state_dict(torch.load(SAVE_PATH, map_location=DEVICE))
 
     eval(model ,test_loader, total)              
 

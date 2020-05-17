@@ -16,14 +16,16 @@ test_dataset = dataset.ThreeD60(root_dir=DATA_PATH, txt_file=TEST_FILE)
 
 test_loader = DataLoader(dataset=test_dataset, batch_size=bs, shuffle=False)
 
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 def main():
 
     # Load model
-    net = m.NetTwo().float()
+    net = m.NetTwo().float().to(DEVICE)
 
     if len(sys.argv) > 1:
         model_file = sys.argv[1]
-        net.load_state_dict(torch.load(model_file))
+        net.load_state_dict(torch.load(model_file, map_location=DEVICE))
         print("Model " + model_file + "loaded")
     else:
         net.load_state_dict(torch.load(SAVE_PATH))
@@ -34,12 +36,12 @@ def main():
 
     with torch.no_grad():
         for data in test_loader:
-            outputs:torch.Tensor = net(data['image'])
+            outputs:torch.Tensor = net(data['image'].to(DEVICE))
             for i, out in enumerate(outputs):
 
-                color = utils.tensorToImage(data['image'][i,:,:,:])
-                ground = utils.getDepthImage(utils.tensorToDepth(data['depth'][i,:,:,:]))
-                predicted = utils.getDepthImage(utils.tensorToDepth(outputs[i,:,:,:]))
+                color = utils.tensorToImage(data['image'][i,:,:,:].to(DEVICE))
+                ground = utils.getDepthImage(utils.tensorToDepth(data['depth'][i,:,:,:].to(DEVICE)))
+                predicted = utils.getDepthImage(utils.tensorToDepth(outputs[i,:,:,:].to(DEVICE)))
             
                 cv2.imshow("Color, Ground Truth, prediction", numpy.concatenate([color,ground,predicted]))
 

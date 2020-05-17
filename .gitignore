@@ -4,3 +4,5 @@ data
 3d60
 .vscode
 __pycache__
+
+models/

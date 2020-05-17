@@ -32,8 +32,10 @@ wrapper.END = False
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def terminate_handler(signum, frame):
-    print('The model will be saved in next item')
-    wrapper.END = True
+    response = input("End? (yes/no)")
+    if response == 'yes':
+        print('The model will be saved in next item')
+        wrapper.END = True
 
 signal.signal(signal.SIGINT, terminate_handler)
 
