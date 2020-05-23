@@ -15,6 +15,7 @@ import cv2
 import utils
 import time
 import loss as lss
+from trainer import Trainer
 
 num_epochs = 20
 bs = 4
@@ -37,9 +38,13 @@ def terminate_handler(signum, frame):
         print('The model will be saved in next item')
         wrapper.END = True
 
-signal.signal(signal.SIGINT, terminate_handler)
+#signal.signal(signal.SIGINT, terminate_handler)
 
 def main():
+    trainer = Trainer()
+    trainer.train()
+
+def main2():
     # transforms to apply to the data
     trans = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
 

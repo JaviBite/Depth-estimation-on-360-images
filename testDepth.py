@@ -6,25 +6,26 @@ import torch
 FUNCTIONS = True
 
 file = "3d60/Stanford2D3D/area1/0_area_11_depth_0_Left_Down_0.0.exr"
+file = "normalDepthDataset/test/LR/depthmap/0001.png"
 
 if FUNCTIONS:
-    import threeD60_dataset as d
+    import normalDepth_dataset as d
 
     # Load image from file
     depth = d.loadDepth(file)
     print("Img Shape: ", depth.shape)
-    cv2.imshow("Imagen: ", utils.getDepthImage(depth))
+    cv2.imshow("Imagen: ", utils.getDepthImage(depth/255.0, 'normal'))
     cv2.waitKey()
 
     # Transform image for tensor
-    tensor = utils.depthToTensor(depth)
+    tensor = utils.depthToTensor(depth, 'normal')
     print("Tensor shape: ", tensor.shape)
     cv2.waitKey()
 
     # Convert tensor to image
     imageDep = utils.tensorToDepth(tensor)
     print("Image shape (from tensor): ",  imageDep.shape)
-    cv2.imshow("Tensor: ", utils.getDepthImage(imageDep))
+    cv2.imshow("Tensor: ", utils.getDepthImage(imageDep, 'normal'))
     cv2.waitKey()
 
 

@@ -19,10 +19,11 @@ import torch
 
 FUNCTIONS = True
 
-file = "3d60/Stanford2D3D/area1/0_area_11_color_0_Left_Down_0.0.png";
+file = "3d60/Stanford2D3D/area1/0_area_11_color_0_Left_Down_0.0.png"
+file = "normalDepthDataset/test/LR/outleft/0001.png"
 
 if FUNCTIONS:
-    import threeD60_dataset as d
+    import normalDepth_dataset as d
 
     # Load image from file
     image = d.loadImage(file)
