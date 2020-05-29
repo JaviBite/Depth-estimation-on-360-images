@@ -21,14 +21,17 @@ def main():
     
     axes = plt.gca()
     #axes.set_xlim([xmin,xmax])
-    #axes.set_ylim([0,0.03])
+    #axes.set_ylim([0,max(sum(loss_train)/len(loss_train),sum(loss_val)/len(loss_val))*3])
+    axes.set_ylim([0,0.3])
 
     axes.set_ylabel('Loss')
     axes.set_xlabel('Epoch')
     axes.set_title('Loss evolution')
 
-    plt.plot(loss_train, 'g', label="Train error")
-    plt.plot(loss_val, 'b', label ="Validation error")
+    x = list(range(len(loss_train)))
+    #plt.xticks(x, x)
+    plt.plot(x, loss_train, 'g', label="Train error")
+    plt.plot(x, loss_val, 'b', label ="Validation error")
 
     handles, labels = axes.get_legend_handles_labels()
 

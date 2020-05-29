@@ -11,6 +11,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from SphereNet import SphereConv2D, SphereMaxPool2D
 
 
 def disp_to_depth(disp, min_depth, max_depth):
@@ -106,10 +107,10 @@ def rot_from_axisangle(vec):
 class ConvBlock(nn.Module):
     """Layer to perform a convolution followed by ELU
     """
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, sphere=False):
         super(ConvBlock, self).__init__()
 
-        self.conv = Conv3x3(in_channels, out_channels)
+        self.conv = Conv3x3(in_channels, out_channels, sphere=sphere)
         self.nonlin = nn.ELU(inplace=True)
 
     def forward(self, x):
@@ -121,14 +122,78 @@ class ConvBlock(nn.Module):
 class Conv3x3(nn.Module):
     """Layer to pad and convolve input
     """
-    def __init__(self, in_channels, out_channels, use_refl=True):
+    def __init__(self, in_channels, out_channels, use_refl=True, sphere=False):
         super(Conv3x3, self).__init__()
+
+        self.sphere = sphere
 
         if use_refl:
             self.pad = nn.ReflectionPad2d(1)
         else:
             self.pad = nn.ZeroPad2d(1)
-        self.conv = nn.Conv2d(int(in_channels), int(out_channels), 3)
+
+        if sphere:
+            self.conv = SphereConv2D(int(in_channels), int(out_channels), stride=1)
+        else:
+            self.conv = nn.Conv2d(int(in_channels), int(out_channels), kernel_size=3, stride=1)
+
+    def forward(self, x):
+        out = x
+        if not self.sphere:
+            out = self.pad(out)
+        out = self.conv(out)
+        return out
+
+class BasicBlockSph(nn.Module):
+    expansion = 1
+
+    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
+                 base_width=64, dilation=1, norm_layer=None):
+        super(BasicBlockSph, self).__init__()
+        if norm_layer is None:
+            norm_layer = nn.BatchNorm2d
+        if groups != 1 or base_width != 64:
+            raise ValueError('BasicBlock only supports groups=1 and base_width=64')
+        if dilation > 1:
+            raise NotImplementedError("Dilation > 1 not supported in BasicBlock")
+        # Both self.conv1 and self.downsample layers downsample the input when stride != 1
+        self.conv1 = SphereConv2D(inplanes, planes, stride=stride, bias=False)
+        self.bn1 = norm_layer(planes)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = SphereConv2D(planes, planes, stride=1, bias=False)
+        self.bn2 = norm_layer(planes)
+        self.downsample = downsample
+        self.stride = stride
+
+    def forward(self, x):
+        identity = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+
+        if self.downsample is not None:
+            identity = self.downsample(x)
+
+        out += identity
+        out = self.relu(out)
+
+        return out
+
+class Conv3x3Sphere(nn.Module):
+    """Layer to pad and convolve input
+    """
+    def __init__(self, in_channels, out_channels, use_refl=True):
+        super(Conv3x3Sphere, self).__init__()
+
+        if use_refl:
+            self.pad = nn.ReflectionPad2d(1)
+        else:
+            self.pad = nn.ZeroPad2d(1)
+        self.conv = SphereConv2D(in_channels, out_channels, stride=1, bias=True, mode='bilinear')
 
     def forward(self, x):
         out = self.pad(x)

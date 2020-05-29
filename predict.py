@@ -17,16 +17,35 @@ bs = 4
 test_dataset = ThreeD60(root_dir=DATA_PATH, txt_file=TEST_FILE)
 #test_dataset = NormalDepth(root_dir=DATA_PATH)
 
-test_loader = DataLoader(dataset=test_dataset, batch_size=bs, shuffle=True)
+test_loader = DataLoader(dataset=test_dataset, batch_size=bs, shuffle=False)
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def main():
+
+    SPHERE_CONVS = True
+    no_image = True
+
+    if len(sys.argv) > 1:
+        model_file = sys.argv[1]
+        print("Model " + model_file + " loaded")
+    else:
+        print("Usage: " + sys.argv[0] + " <model folder> [--img <image>] [--no_sphere]")
+        exit()
+
+    if '--no_sphere' in sys.argv:
+        SPHERE_CONVS = False
+
+    if '--img' in sys.argv:
+        no_image = False
+        image_file = sys.argv[3]
+
+
     # LOADING PRETRAINED MODEL
     device = DEVICE
     print("   Loading pretrained encoder")
-    encoder = m.ResnetEncoder(18, False)
-    loaded_dict_enc = torch.load('models/model_shpere_1_ep22/encoder.pth', map_location=device)
+    encoder = m.ResnetEncoder(18, True, sphere=SPHERE_CONVS)
+    loaded_dict_enc = torch.load(model_file + '/encoder.pth', map_location=device)
 
     # extract the height and width of image that this model was trained with
     feed_height = loaded_dict_enc['height']
@@ -38,30 +57,48 @@ def main():
 
     print("   Loading pretrained decoder")
     depth_decoder = m.DepthDecoder(
-        num_ch_enc=encoder.num_ch_enc, scales=range(4))
+        num_ch_enc=encoder.num_ch_enc, scales=range(4), sphere=SPHERE_CONVS)
 
-    loaded_dict = torch.load('models/model_shpere_1_ep22/depth.pth', map_location=device)
+    loaded_dict = torch.load(model_file + '/depth.pth', map_location=device)
     depth_decoder.load_state_dict(loaded_dict)
 
     depth_decoder.to(device)
+    depth_decoder.eval()
 
     with torch.no_grad():
-        for data in test_loader:
-            features = encoder(data['image'].to(DEVICE))
+        if no_image:
+            for data in test_loader:
+                features = encoder(data['image'].to(DEVICE))
+                outputs:torch.Tensor = depth_decoder(features)
+
+                for i, out in enumerate(outputs):
+                    disp = outputs[("disp", 0)]
+                    color = utils.tensorToImage(data['image'][i,:,:,:].to(DEVICE))
+                    ground = utils.getDepthImage(utils.tensorToDepth(data['depth'][i,:,:,:].to(DEVICE)), '3d60')
+                    predicted = utils.getDepthImage(utils.tensorToDepth(disp[i,:,:,:].to(DEVICE)), '3d60')
+                
+                    cv2.imshow("Color, Ground Truth, prediction", numpy.concatenate([color,ground,predicted]))
+
+                    key = cv2.waitKey()
+                    if chr(key) == 'q':
+                        print("Exit")
+                        sys.exit()
+        else:
+            image = loadImage(image_file)
+            image = cv2.resize(image,(test_dataset.width,test_dataset.height))
+            tensor = utils.imageToTensor(image)
+            tensor = tensor.unsqueeze(0)
+            features = encoder(tensor.to(DEVICE))
             outputs:torch.Tensor = depth_decoder(features)
+            disp = outputs[("disp", 0)]
+            color = image/255
+            predicted = utils.getDepthImage(utils.tensorToDepth(disp[0,:,:,:].to(DEVICE)), 'normal')
+        
+            cv2.imshow("Color, prediction", numpy.concatenate([color,predicted]))
 
-            for i, out in enumerate(outputs):
-                disp = outputs[("disp", 0)]
-                color = utils.tensorToImage(data['image'][i,:,:,:].to(DEVICE))
-                ground = utils.getDepthImage(utils.tensorToDepth(data['depth'][i,:,:,:].to(DEVICE)), 'normal')
-                predicted = utils.getDepthImage(utils.tensorToDepth(disp[i,:,:,:].to(DEVICE)), 'normal')
-            
-                cv2.imshow("Color, Ground Truth, prediction", numpy.concatenate([color,ground,predicted]))
-
-                key = cv2.waitKey()
-                if chr(key) == 'q':
-                    print("Exit")
-                    sys.exit()
+            key = cv2.waitKey()
+            print("Exit")
+            sys.exit()
 
 
 def main2():

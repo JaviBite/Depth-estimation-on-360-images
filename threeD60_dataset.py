@@ -28,6 +28,8 @@ class ThreeD60(Dataset):
         """
         self.root_dir = root_dir
         self.data = []
+        self.height = 256
+        self.width = 512
 
         with open (txt_file, 'r') as f:
             for line in f.readlines():

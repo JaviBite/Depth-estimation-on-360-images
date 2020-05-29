@@ -24,6 +24,7 @@ def tensorToImage(tensor):
     # Transform tensor to image
     out = out.transpose(1, 2, 0)
     image = numpy.array(out)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     return image
 
 def depthToTensor(depth, dataset='3d60'):
@@ -51,18 +52,22 @@ def tensorToDepth(tensor):
     return depth
 
 def getDepthImage(image, dataset='3d60'):
+    image = image
     if dataset == 'normal':
         cmap = plt.cm.magma
         norm = plt.Normalize(vmin=0.0, vmax=1.0)
         image = cmap(norm(image))
-        return image[:,:,0:3]
     elif dataset == '3d60':
         image[numpy.isinf(image)] = 0.0   # 5000 is inf
         image[image > 1.0] = 0.0   # 5000 is inf
         cmap = plt.cm.magma
-        norm = plt.Normalize(vmin=0.0, vmax=1.5)
+        norm = plt.Normalize(vmin=0.0, vmax=1.0)
         image = cmap(norm(image))
-        return image[:,:,0:3]
+
+    image = image[:,:,0:3]
+    image = numpy.float32(image)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    return image[:,:,0:3]
 
 def sec_to_hm(t):
     """Convert time in seconds to time in hours, minutes and seconds

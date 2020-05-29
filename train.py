@@ -18,7 +18,7 @@ import loss as lss
 from trainer import Trainer
 
 num_epochs = 20
-bs = 4
+bs = 8
 lr = 0.0001
 
 DATA_PATH = '3d60'
@@ -41,7 +41,14 @@ def terminate_handler(signum, frame):
 #signal.signal(signal.SIGINT, terminate_handler)
 
 def main():
-    trainer = Trainer()
+    sphere_mode = True
+
+    if '--no_sphere' in sys.argv:
+        sphere_mode = False
+    
+    print("Mode sphere: ", sphere_mode)
+
+    trainer = Trainer(sphere_mode)
     trainer.train()
 
 def main2():

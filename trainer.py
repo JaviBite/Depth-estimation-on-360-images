@@ -20,28 +20,30 @@ from layers import *
 import os
 import utils as u
 
+
 class Trainer:
-    def __init__(self):
+    def __init__(self, sphere=False):
 
         self.savedir = 'models'
         self.datapath = '3d60'
         self.trainfile = '3d60/v1/train_files.txt'
         self.testfile = '3d60/v1/test_files.txt'
+        self.valfile = '3d60/v1/val_files.txt'
 
         self.logfile = 'logfile.txt'
         self.log_frequency = 100
 
-        self.bs = 8
-        self.num_epochs = 100
-        self.save_frequency = 2
+        self.bs = 4
+        self.num_epochs = 40
+        self.save_frequency = 5
         self.num_layers = 18
         self.weights_init = "pretrained"
         self.scales = range(4)
         self.learning_rate = 1e-4
         self.scheduler_step_size = 15
 
-        self.height = 384 #  256
-        self.width = 640 # 512
+        self.height = 256   #384
+        self.width = 512    #640
 
         self.models = {}
         self.parameters_to_train = []
@@ -49,12 +51,12 @@ class Trainer:
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         self.models["encoder"] = networks.ResnetEncoder(
-            self.num_layers, self.weights_init == "pretrained")
+            self.num_layers, self.weights_init == "pretrained", sphere=sphere)
         self.models["encoder"].to(self.device)
         self.parameters_to_train += list(self.models["encoder"].parameters())
 
         self.models["depth"] = networks.DepthDecoder(
-            self.models["encoder"].num_ch_enc, self.scales)
+            self.models["encoder"].num_ch_enc, self.scales, sphere=sphere)
         self.models["depth"].to(self.device)
         self.parameters_to_train += list(self.models["depth"].parameters())
 
@@ -64,25 +66,29 @@ class Trainer:
         self.model_lr_scheduler = optim.lr_scheduler.StepLR(
             self.model_optimizer, self.scheduler_step_size, 0.1)
 
-        self.criterion = lss.GradLoss()
+        self.criterion = lss.L2Loss()
+        # self.criterion = lss.SphereMSE(self.height, self.width).to(self.device)
 
         # dataset
         train_dataset = ThreeD60(root_dir=self.datapath, txt_file=self.trainfile)
+        val_dataset = ThreeD60(root_dir=self.datapath, txt_file=self.valfile)
         #train_dataset = NormalDepth(root_dir='normalDepthDataset/train/LR')
         
 
-        train_size = int(0.8 * len(train_dataset))
-        val_size = len(train_dataset) - train_size
-        train_dataset, val_dataset = torch.utils.data.random_split(train_dataset, [train_size, val_size])
+        # train_size = int(0.8 * len(train_dataset))
+        # val_size = len(train_dataset) - train_size
+        # train_dataset, val_dataset = torch.utils.data.random_split(train_dataset, [train_size, val_size])
 
         self.train_loader = DataLoader(dataset=train_dataset, batch_size=self.bs, shuffle=True)
-        self.val_loader = DataLoader(dataset=val_dataset, batch_size=self.bs, shuffle=True)
+        self.val_loader = DataLoader(dataset=val_dataset, batch_size=self.bs, shuffle=False)
 
         self.val_iter = iter(self.val_loader)
 
         self.num_steps = len(self.train_loader)
 
         # print("Training model named:\n  ", self.opt.model_name)
+        print("Training images: ", str(len(train_dataset)))
+        print("Validation images: ", str(len(val_dataset)))
         print("Models and tensorboard events files are saved to:\n  ", self.savedir)
         print("Training is using:\n  ", self.device)
 
@@ -95,7 +101,9 @@ class Trainer:
         self.start_time = time.time()
         for self.epoch in range(self.num_epochs):
             self.run_epoch()
-            if (self.epoch + 1) % self.save_frequency == 0:
+            if (self.epoch + 1) % self.save_frequency == 0 or \
+            		self.epoch == self.num_epochs or \
+            		self.epoch < 1:
                 print("Saving model...")
                 self.save_model()
 
@@ -127,6 +135,7 @@ class Trainer:
                 self.log_time(batch_idx, duration, losses["loss"].cpu().data)
                 
             self.step += 1
+            
         self.log("train", inputs, outputs, losses)
         self.val()
 
