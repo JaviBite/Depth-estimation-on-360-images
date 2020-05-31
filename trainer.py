@@ -22,7 +22,7 @@ import utils as u
 
 
 class Trainer:
-    def __init__(self, sphere=False):
+    def __init__(self, sphere=False, model_folder=None, epoch=0):
 
         self.savedir = 'models'
         self.datapath = '3d60'
@@ -33,7 +33,7 @@ class Trainer:
         self.logfile = 'logfile.txt'
         self.log_frequency = 100
 
-        self.bs = 4
+        self.bs = 1
         self.num_epochs = 40
         self.save_frequency = 5
         self.num_layers = 18
@@ -86,6 +86,14 @@ class Trainer:
 
         self.num_steps = len(self.train_loader)
 
+        self.epoch = None
+        if model_folder is not None:
+            print("Loading model: ", model_folder)
+            print("Model at epoch", epoch)
+            self.load_model(model_folder)
+            self.epoch = epoch + 1
+
+
         # print("Training model named:\n  ", self.opt.model_name)
         print("Training images: ", str(len(train_dataset)))
         print("Validation images: ", str(len(val_dataset)))
@@ -96,7 +104,8 @@ class Trainer:
     def train(self):
         """Run the entire training pipeline
         """
-        self.epoch = 0
+        if self.epoch is None:
+            self.epoch = 0
         self.step = 0
         self.start_time = time.time()
         for self.epoch in range(self.num_epochs):
@@ -231,29 +240,28 @@ class Trainer:
         save_path = os.path.join(save_folder, "{}.pth".format("adam"))
         torch.save(self.model_optimizer.state_dict(), save_path)
 
-    def load_model(self):
+    def load_model(self, folder):
         """Load model(s) from disk
         """
-        self.opt.load_weights_folder = os.path.expanduser(self.opt.load_weights_folder)
 
-        assert os.path.isdir(self.opt.load_weights_folder), \
-            "Cannot find folder {}".format(self.opt.load_weights_folder)
-        print("loading model from folder {}".format(self.opt.load_weights_folder))
+        assert os.path.isdir(folder), \
+            "Cannot find folder {}".format(folder)
+        print("loading model from folder {}".format(folder))
 
-        for n in self.opt.models_to_load:
+        for n in ['encoder','depth']:
             print("Loading {} weights...".format(n))
-            path = os.path.join(self.opt.load_weights_folder, "{}.pth".format(n))
+            path = os.path.join(folder, "{}.pth".format(n))
             model_dict = self.models[n].state_dict()
-            pretrained_dict = torch.load(path)
+            pretrained_dict = torch.load(path, map_location=self.device)
             pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
             model_dict.update(pretrained_dict)
             self.models[n].load_state_dict(model_dict)
 
         # loading adam state
-        optimizer_load_path = os.path.join(self.opt.load_weights_folder, "adam.pth")
+        optimizer_load_path = os.path.join(folder, "adam.pth")
         if os.path.isfile(optimizer_load_path):
             print("Loading Adam weights")
-            optimizer_dict = torch.load(optimizer_load_path)
+            optimizer_dict = torch.load(optimizer_load_path, map_location=self.device)
             self.model_optimizer.load_state_dict(optimizer_dict)
         else:
             print("Cannot find Adam weights so Adam is randomly initialized")

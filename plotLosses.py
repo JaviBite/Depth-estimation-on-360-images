@@ -7,8 +7,11 @@ def main():
     if len(sys.argv) > 1:
         logfile = sys.argv[1]
     else:
-        print("Usage: " + sys.argv[0] + " <logfile>")
+        print("Usage: " + sys.argv[0] + " <logfile> <max_y>")
         exit()
+
+    if len(sys.argv) > 2:
+        max_y = float(sys.argv[2])
 
     f = open(logfile, "r")
 
@@ -22,7 +25,8 @@ def main():
     axes = plt.gca()
     #axes.set_xlim([xmin,xmax])
     #axes.set_ylim([0,max(sum(loss_train)/len(loss_train),sum(loss_val)/len(loss_val))*3])
-    axes.set_ylim([0,0.3])
+    if len(sys.argv) > 2:
+        axes.set_ylim([0,max_y])
 
     axes.set_ylabel('Loss')
     axes.set_xlabel('Epoch')

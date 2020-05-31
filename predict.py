@@ -12,9 +12,10 @@ DATA_PATH = '3d60'
 #DATA_PATH = 'normalDepthDataset/test/LR'
 TEST_FILE = '3d60/v1/test_files.txt'
 SAVE_PATH = './models/model2_ep0.pt'
+BAD_FILE = '3d60/v1/bad.txt'
 bs = 4
 
-test_dataset = ThreeD60(root_dir=DATA_PATH, txt_file=TEST_FILE)
+test_dataset = ThreeD60(root_dir=DATA_PATH, txt_file=BAD_FILE)
 #test_dataset = NormalDepth(root_dir=DATA_PATH)
 
 test_loader = DataLoader(dataset=test_dataset, batch_size=bs, shuffle=False)

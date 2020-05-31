@@ -57,6 +57,6 @@ class ThreeD60(Dataset):
         imgTensor = utils.imageToTensor(img)
         depthTensor = utils.depthToTensor(dep)
 
-        sample = {'image': imgTensor, 'depth': depthTensor}
+        sample = {'image': imgTensor, 'depth': depthTensor, 'name': self.data[idx]['image']}
 
         return sample

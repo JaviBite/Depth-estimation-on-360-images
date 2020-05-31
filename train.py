@@ -45,10 +45,15 @@ def main():
 
     if '--no_sphere' in sys.argv:
         sphere_mode = False
+
+    if len(sys.argv) > 2:
+        model_folder = sys.argv[1]
+        epoch = int(sys.argv[2])
+
     
     print("Mode sphere: ", sphere_mode)
 
-    trainer = Trainer(sphere_mode)
+    trainer = Trainer(sphere_mode, model_folder, epoch)
     trainer.train()
 
 def main2():
