@@ -33,11 +33,11 @@ class Trainer:
         self.logfile = 'logfile.txt'
         self.log_frequency = 100
 
-        self.bs = 1
-        self.num_epochs = 40
-        self.save_frequency = 5
+        self.bs = 4
+        self.num_epochs = 100
+        self.save_frequency = 10
         self.num_layers = 18
-        self.weights_init = "pretrained"
+        self.weights_init = "nopretrained"
         self.scales = range(4)
         self.learning_rate = 1e-4
         self.scheduler_step_size = 15
@@ -66,8 +66,8 @@ class Trainer:
         self.model_lr_scheduler = optim.lr_scheduler.StepLR(
             self.model_optimizer, self.scheduler_step_size, 0.1)
 
-        self.criterion = lss.L2Loss()
-        # self.criterion = lss.SphereMSE(self.height, self.width).to(self.device)
+        #self.criterion = lss.L2Loss()
+        self.criterion = lss.SphereMSE(self.height, self.width).to(self.device)
 
         # dataset
         train_dataset = ThreeD60(root_dir=self.datapath, txt_file=self.trainfile)

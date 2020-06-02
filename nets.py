@@ -154,23 +154,48 @@ class ResNetShpere(models.ResNet):
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-        
-    def _make_layer(self, block, planes, blocks, stride=1):
+
+    def _make_layer(self, block, planes, blocks, stride=1, dilate=False):
+        norm_layer = self._norm_layer
         downsample = None
+        previous_dilation = self.dilation
+        if dilate:
+            self.dilation *= stride
+            stride = 1
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                SphereConv2D(self.inplanes, planes * block.expansion,
-                            stride=stride, bias=False),
-                nn.BatchNorm2d(planes * block.expansion),
+                SphereConv2D(self.inplanes, planes * block.expansion, stride=stride, bias=False),
+                norm_layer(planes * block.expansion),
             )
 
         layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample))
+        layers.append(block(self.inplanes, planes, stride, downsample, self.groups,
+                            self.base_width, previous_dilation, norm_layer))
         self.inplanes = planes * block.expansion
-        for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
+        for _ in range(1, blocks):
+            layers.append(block(self.inplanes, planes, groups=self.groups,
+                                base_width=self.base_width, dilation=self.dilation,
+                                norm_layer=norm_layer))
 
         return nn.Sequential(*layers)
+        
+    # def _make_layer(self, block, planes, blocks, stride=1):
+    #     downsample = None
+    #     if stride != 1 or self.inplanes != planes * block.expansion:
+    #         print("test")
+    #         downsample = nn.Sequential(
+    #             SphereConv2D(self.inplanes, planes * block.expansion,
+    #                         stride=stride, bias=False),
+    #             nn.BatchNorm2d(planes * block.expansion),
+    #         )
+
+    #     layers = []
+    #     layers.append(block(self.inplanes, planes, stride, downsample))
+    #     self.inplanes = planes * block.expansion
+    #     for i in range(1, blocks):
+    #         layers.append(block(self.inplanes, planes))
+
+    #     return nn.Sequential(*layers)
 
 
 # def resnet_multiimage_input(num_layers, pretrained=False, num_input_images=1):
@@ -198,7 +223,8 @@ def resnet_sphereconv(num_layers, pretrained=False, num_input_images=1):
     block_type = {18: BasicBlockSph}[num_layers]
     model = ResNetShpere(block_type, blocks, num_input_images=num_input_images)
 
-    if pretrained and False:
+    if pretrained:
+        print("Loading petrained conv1 model")
         loaded = model_zoo.load_url(models.resnet.model_urls['resnet{}'.format(num_layers)])
         loaded['conv1.weight'] = torch.cat(
             [loaded['conv1.weight']] * num_input_images, 1) / num_input_images
@@ -229,7 +255,7 @@ class ResnetEncoder(nn.Module):
         if not sphere:
             self.encoder = resnets[num_layers](pretrained)
         else:
-            self.encoder = resnet_sphereconv(num_layers, False)
+            self.encoder = resnet_sphereconv(num_layers, pretrained)
 
         if num_layers > 34:
             self.num_ch_enc[1:] *= 4
@@ -241,10 +267,26 @@ class ResnetEncoder(nn.Module):
         x = self.encoder.bn1(x)
 
         self.features.append(self.encoder.relu(x))
+        # for x in self.features:
+        #     print(x.shape)
+        # print("- END -")
         self.features.append(self.encoder.layer1(self.encoder.maxpool(self.features[-1])))
+        # for x in self.features:
+        #     print(x.shape)
+        # print("- END -")
         self.features.append(self.encoder.layer2(self.features[-1]))
+        # for x in self.features:
+        #     print(x.shape)
+        # print("- END -")
+        
         self.features.append(self.encoder.layer3(self.features[-1]))
+        # for x in self.features:
+        #     print(x.shape)
+        # print("- END -")
         self.features.append(self.encoder.layer4(self.features[-1]))
+        # for x in self.features:
+        #     print(x.shape)
+        # print("- END -")
 
         return self.features
 

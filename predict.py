@@ -12,7 +12,6 @@ DATA_PATH = '3d60'
 #DATA_PATH = 'normalDepthDataset/test/LR'
 TEST_FILE = '3d60/v1/test_files.txt'
 SAVE_PATH = './models/model2_ep0.pt'
-BAD_FILE = '3d60/v1/bad.txt'
 bs = 4
 
 test_dataset = ThreeD60(root_dir=DATA_PATH, txt_file=TEST_FILE)

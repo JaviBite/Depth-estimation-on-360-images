@@ -15,7 +15,7 @@ DATA_PATH = '3d60'
 #DATA_PATH = 'normalDepthDataset/test/LR'
 TEST_FILE = '3d60/v1/test_files.txt'
 SAVE_PATH = './models/model2_ep0.pt'
-bs = 4
+bs = 1
 PRINT_FREC = 10
 MIN_DEPTH = 1e-3
 
@@ -30,14 +30,14 @@ test_loader = DataLoader(dataset=test_dataset, batch_size=bs, shuffle=True)
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-spherical_loss = lss.SphereMSE(test_dataset.height, test_dataset.width)
+spherical_loss = lss.SphereMSE(test_dataset.height, test_dataset.width).to(DEVICE)
 l2_loss = lss.L2Loss()
 
 def compute_errors(gt, pred):
     """Computation of error metrics between predicted and ground truth depths
     """
-    gt = gt * DEPTH_SCALE 
-    pred = pred * DEPTH_SCALE 
+    # gt = gt * DEPTH_SCALE 
+    # pred = pred * DEPTH_SCALE 
 
     gt[gt <= 0] = MIN_DEPTH
     pred[pred <= 0] = MIN_DEPTH
@@ -107,6 +107,8 @@ def main():
 
     printIndex = 0
     count = 0
+    worst_error = 0
+    worst_file = 'none'
 
     with torch.no_grad():
         for data in test_loader:
@@ -125,8 +127,13 @@ def main():
                 ground = utils.tensorToDepth(i_gt)
                 predicted = utils.tensorToDepth(i_pred)
 
-                #errors.append(compute_errors(ground, predicted) + (spherical_loss(i_pred, i_gt),) )
-                errors.append(compute_errors(ground, predicted))
+                metrics = compute_errors(ground, predicted) + (spherical_loss(i_pred, i_gt),)
+                #metrics = compute_errors(ground, predicted)
+                if metrics[2] > worst_error:
+                    worst_error = metrics[2]
+                    worst_file = data['name']
+
+                errors.append(metrics)
             
             count += bs
             printIndex += bs
@@ -140,8 +147,9 @@ def main():
 
 
     mean_errors = np.array(errors).mean(0)
-    print("\n  " + ("{:>8} | " * 7).format("abs_rel", "sq_rel", "rmse", "rmse_log", "a1", "a2", "a3"))
-    print(("&{: 8.3f}  " * 7).format(*mean_errors.tolist()) + "\\\\")
+    print("\n  " + ("{:>8} | " * 8).format("abs_rel", "sq_rel", "rmse", "rmse_log", "a1", "a2", "a3", "srmse"))
+    print(("&{: 8.3f}  " * 8).format(*mean_errors.tolist()) + "\\\\")
+    print("Worst RSME: " + str(worst_error) + " file: " + str(worst_file))
     print("\n-> Done!")
 
 
