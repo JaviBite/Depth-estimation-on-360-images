@@ -154,6 +154,23 @@ class ResNetShpere(models.ResNet):
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
+        
+    def _make_layer(self, block, planes, blocks, stride=1):
+        downsample = None
+        if stride != 1 or self.inplanes != planes * block.expansion:
+            downsample = nn.Sequential(
+                SphereConv2D(self.inplanes, planes * block.expansion,
+                            stride=stride, bias=False),
+                nn.BatchNorm2d(planes * block.expansion),
+            )
+
+        layers = []
+        layers.append(block(self.inplanes, planes, stride, downsample))
+        self.inplanes = planes * block.expansion
+        for i in range(1, blocks):
+            layers.append(block(self.inplanes, planes))
+
+        return nn.Sequential(*layers)
 
 
 # def resnet_multiimage_input(num_layers, pretrained=False, num_input_images=1):
@@ -222,10 +239,10 @@ class ResnetEncoder(nn.Module):
         x = (input_image - 0.45) / 0.225
         x = self.encoder.conv1(x)
         x = self.encoder.bn1(x)
+
         self.features.append(self.encoder.relu(x))
         self.features.append(self.encoder.layer1(self.encoder.maxpool(self.features[-1])))
         self.features.append(self.encoder.layer2(self.features[-1]))
-        
         self.features.append(self.encoder.layer3(self.features[-1]))
         self.features.append(self.encoder.layer4(self.features[-1]))
 

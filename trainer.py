@@ -108,7 +108,7 @@ class Trainer:
             self.epoch = 0
         self.step = 0
         self.start_time = time.time()
-        for self.epoch in range(self.num_epochs):
+        for self.epoch in range(self.epoch, self.num_epochs, 1):
             self.run_epoch()
             if (self.epoch + 1) % self.save_frequency == 0 or \
             		self.epoch == self.num_epochs or \

@@ -46,6 +46,8 @@ def main():
     if '--no_sphere' in sys.argv:
         sphere_mode = False
 
+    model_folder = None
+    epoch = 0
     if len(sys.argv) > 2:
         model_folder = sys.argv[1]
         epoch = int(sys.argv[2])
