@@ -156,7 +156,7 @@ class ResNetShpere(models.ResNet):
                 nn.init.constant_(m.bias, 0)
 
     def _make_layer(self, block, planes, blocks, stride=1, dilate=False):
-        norm_layer = self._norm_layer
+        norm_layer = self._norm_layer 
         downsample = None
         previous_dilation = self.dilation
         if dilate:
@@ -178,44 +178,72 @@ class ResNetShpere(models.ResNet):
                                 norm_layer=norm_layer))
 
         return nn.Sequential(*layers)
-        
-    # def _make_layer(self, block, planes, blocks, stride=1):
-    #     downsample = None
-    #     if stride != 1 or self.inplanes != planes * block.expansion:
-    #         print("test")
-    #         downsample = nn.Sequential(
-    #             SphereConv2D(self.inplanes, planes * block.expansion,
-    #                         stride=stride, bias=False),
-    #             nn.BatchNorm2d(planes * block.expansion),
-    #         )
-
-    #     layers = []
-    #     layers.append(block(self.inplanes, planes, stride, downsample))
-    #     self.inplanes = planes * block.expansion
-    #     for i in range(1, blocks):
-    #         layers.append(block(self.inplanes, planes))
-
-    #     return nn.Sequential(*layers)
 
 
-# def resnet_multiimage_input(num_layers, pretrained=False, num_input_images=1):
-#     """Constructs a ResNet model.
-#     Args:
-#         num_layers (int): Number of resnet layers. Must be 18 or 50
-#         pretrained (bool): If True, returns a model pre-trained on ImageNet
-#         num_input_images (int): Number of frames stacked as input
-#     """
-#     assert num_layers in [18, 50], "Can only run with 18 or 50 layer resnet"
-#     blocks = {18: [2, 2, 2, 2], 50: [3, 4, 6, 3]}[num_layers]
-#     block_type = {18: models.resnet.BasicBlock, 50: models.resnet.Bottleneck}[num_layers]
-#     model = ResNetMultiImageInput(block_type, blocks, num_input_images=num_input_images)
+class ResNetMod(models.ResNet):
+    """Constructs a resnet model with varying number of input images.
+    Adapted from https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
+    """
+    def __init__(self, block, layers, num_classes=1000, num_input_images=1):
+        super(ResNetMod, self).__init__(block, layers)
 
-#     if pretrained:
-#         loaded = model_zoo.load_url(models.resnet.model_urls['resnet{}'.format(num_layers)])
-#         loaded['conv1.weight'] = torch.cat(
-#             [loaded['conv1.weight']] * num_input_images, 1) / num_input_images
-#         model.load_state_dict(loaded)
-#     return model
+        self.inplanes = 64
+
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1,
+                               bias=False)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.layer1 = self._make_layer(block, 64, layers[0])
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+    def _make_layer(self, block, planes, blocks, stride=1, dilate=False):
+        norm_layer = self._norm_layer 
+        downsample = None
+        previous_dilation = self.dilation
+        if dilate:
+            self.dilation *= stride
+            stride = 1
+        if stride != 1 or self.inplanes != planes * block.expansion:
+            downsample = nn.Sequential(
+                nn.Conv2d(self.inplanes, planes * block.expansion,
+                          kernel_size=3, stride=stride, padding=1, bias=False),
+                norm_layer(planes * block.expansion),
+            )
+
+        layers = []
+        layers.append(block(self.inplanes, planes, stride, downsample, self.groups,
+                            self.base_width, previous_dilation, norm_layer))
+        self.inplanes = planes * block.expansion
+        for _ in range(1, blocks):
+            layers.append(block(self.inplanes, planes, groups=self.groups,
+                                base_width=self.base_width, dilation=self.dilation,
+                                norm_layer=norm_layer))
+
+        return nn.Sequential(*layers)
+
+def resnet_mod(num_layers, pretrained=False, num_input_images=1):
+    assert num_layers in [18], "Can only run with 18 layer resnet"
+    blocks = {18: [2, 2, 2, 2], 50: [3, 4, 6, 3]}[num_layers]
+    block_type = {18: BasicBlock, 50: models.resnet.Bottleneck}[num_layers]
+    model = ResNetMod(block_type, blocks, num_input_images=num_input_images)
+
+    if pretrained:
+        print("Loading petrained conv1 model")
+        loaded = model_zoo.load_url(models.resnet.model_urls['resnet{}'.format(num_layers)])
+        loaded['conv1.weight'] = torch.cat(
+            [loaded['conv1.weight']] * num_input_images, 1) / num_input_images
+        model.load_state_dict(loaded)
+    return model
 
 def resnet_sphereconv(num_layers, pretrained=False, num_input_images=1):
     assert num_layers in [18], "Can only run with 18 layer resnet"
@@ -253,7 +281,7 @@ class ResnetEncoder(nn.Module):
         #     self.encoder = resnet_multiimage_input(num_layers, pretrained, num_input_images)
         # else:
         if not sphere:
-            self.encoder = resnets[num_layers](pretrained)
+            self.encoder = resnet_mod(num_layers, pretrained)
         else:
             self.encoder = resnet_sphereconv(num_layers, pretrained)
 

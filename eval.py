@@ -80,7 +80,7 @@ def main():
     # LOADING PRETRAINED MODEL
     device = DEVICE
     print("   Loading pretrained encoder")
-    encoder = m.ResnetEncoder(18, True, sphere=SPHERE_CONVS)
+    encoder = m.ResnetEncoder(18, False, sphere=SPHERE_CONVS)
     loaded_dict_enc = torch.load(model_file + '/encoder.pth', map_location=device)
 
     # extract the height and width of image that this model was trained with
