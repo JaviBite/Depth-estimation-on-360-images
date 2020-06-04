@@ -147,9 +147,7 @@ class ResNetShpere(models.ResNet):
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
 
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            elif isinstance(m, SphereConv2D):
+            if isinstance(m, SphereConv2D):
                 m.reset_parameters()
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
@@ -201,7 +199,8 @@ class ResNetMod(models.ResNet):
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                #nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                nn.init.kaiming_uniform_(m.weight, a=np.sqrt(5))
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)

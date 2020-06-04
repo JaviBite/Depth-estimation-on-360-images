@@ -68,6 +68,7 @@ class Trainer:
 
         self.criterion = lss.L2Loss()
         #self.criterion = lss.SphereMSE(self.height, self.width).to(self.device)
+        #self.criterion = nn.MSELoss()()
 
         # dataset
         train_dataset = ThreeD60(root_dir=self.datapath, txt_file=self.trainfile)
