@@ -11,13 +11,9 @@ import sys
 DATA_PATH = '3d60'
 #DATA_PATH = 'normalDepthDataset/test/LR'
 TEST_FILE = '3d60/v1/test_files.txt'
+BAD_FILE = '3d60/v1/bad.txt'
 SAVE_PATH = './models/model2_ep0.pt'
 bs = 4
-
-test_dataset = ThreeD60(root_dir=DATA_PATH, txt_file=TEST_FILE)
-#test_dataset = NormalDepth(root_dir=DATA_PATH)
-
-test_loader = DataLoader(dataset=test_dataset, batch_size=bs, shuffle=False)
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -25,6 +21,7 @@ def main():
 
     SPHERE_CONVS = True
     no_image = True
+    FILE = TEST_FILE
 
     if len(sys.argv) > 1:
         model_file = sys.argv[1]
@@ -36,9 +33,17 @@ def main():
     if '--no_sphere' in sys.argv:
         SPHERE_CONVS = False
 
+    if '--bad' in sys.argv:
+        FILE = BAD_FILE
+
     if '--img' in sys.argv:
         no_image = False
         image_file = sys.argv[3]
+
+    test_dataset = ThreeD60(root_dir=DATA_PATH, txt_file=FILE)
+    #test_dataset = NormalDepth(root_dir=DATA_PATH)
+
+    test_loader = DataLoader(dataset=test_dataset, batch_size=bs, shuffle=False)
 
 
     # LOADING PRETRAINED MODEL
