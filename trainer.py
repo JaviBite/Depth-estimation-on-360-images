@@ -126,15 +126,17 @@ class Trainer:
 
         train_size = int(0.8 * len(self.train_dataset))
         val_size = len(self.train_dataset) - train_size
-        self.train_dataset, self.val_dataset = torch.utils.data.random_split(self.train_dataset, [train_size, val_size])
+        this_train_dataset, self.val_dataset = torch.utils.data.random_split(self.train_dataset, [train_size, val_size])
 
-        self.train_loader = DataLoader(dataset=self.train_dataset, batch_size=self.bs, shuffle=True)
+        self.train_loader = DataLoader(dataset=this_train_dataset, batch_size=self.bs, shuffle=True)
         self.val_loader = DataLoader(dataset=self.val_dataset, batch_size=self.bs, shuffle=False)
 
         self.num_steps = len(self.train_loader)
 
         print("Training")
         self.set_train()
+
+        loss_ep = 0
 
         for batch_idx, inputs in enumerate(self.train_loader):
 
@@ -156,8 +158,12 @@ class Trainer:
                 self.log_time(batch_idx, duration, losses["loss"].cpu().data)
                 
             self.step += 1
+
+            loss_ep += float(losses["loss"].cpu().data)
+        
+        loss_ep /= len(self.train_loader)
             
-        self.log("train", inputs, outputs, losses)
+        self.log("train", inputs, outputs, loss_ep)
         self.val()
 
     def log_time(self, batch_idx, duration, loss):
@@ -174,7 +180,7 @@ class Trainer:
 
     def log(self, logType, inputs, outputs, loss):
         f = open(self.logfile, "a")
-        f.write(logType + " " + str(loss["loss"].item()) + " ")
+        f.write(logType + " " + str(loss) + " ")
         if logType == "val":
         	f.write("\n")
         f.close()
@@ -205,12 +211,11 @@ class Trainer:
         with torch.no_grad():
             for batch_idx, inputs in enumerate(self.val_loader):
                 outputs, losses = self.process_batch(inputs)
-                total_loss += losses["loss"]
+                total_loss += float(losses["loss"].cpu().data)
             	
-            loss = {}
-            loss["loss"] = total_loss = total_loss / len(self.val_loader)
+            total_loss = total_loss / len(self.val_loader)
 
-            self.log("val", inputs, outputs, loss)
+            self.log("val", inputs, outputs, total_loss)
             self.this_loss = total_loss
             del total_loss
 

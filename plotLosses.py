@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import sys
+import numpy as np
 
 
 def main():
@@ -17,11 +18,21 @@ def main():
 
     loss_train = []
     loss_val = []
+    ep = 0
+    min_val_loss = np.inf
+    min_val_loss_ep = 0
     for line in f:
         splitt = line.split(" ")
+        val_loss = float(splitt[3])
         loss_train.append(float(splitt[1]))
-        loss_val.append(float(splitt[3]))
-    
+        loss_val.append(val_loss)
+        if val_loss < min_val_loss:
+            min_val_loss = val_loss
+            min_val_loss_ep = ep
+        ep += 1
+
+    print("Min validation loss at epoch ", str(min_val_loss_ep), " : ", str(min_val_loss))
+     
     axes = plt.gca()
     #axes.set_xlim([xmin,xmax])
     #axes.set_ylim([0,max(sum(loss_train)/len(loss_train),sum(loss_val)/len(loss_val))*3])
